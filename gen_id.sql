@@ -1,4 +1,3 @@
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- The generated ID has 6 timestamp bytes (ms precision) + 4 random bytes =>
 -- output is Base58 encoded, with an optional prefix:
 -- gen_id() => 5xXBF6THVcCpa
@@ -8,6 +7,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- prefix a timestamp to the IDs sortable. Inspired by https://github.com/ulid/spec
 -- https://github.com/chrhansen/pg-id
 
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE OR REPLACE FUNCTION gen_id(prefix text default NULL) RETURNS text
     LANGUAGE plpgsql
     AS $$
@@ -46,7 +46,7 @@ DECLARE
     num            DECIMAL(40,0) := 0;
     base           DECIMAL(40,0) := 1;
 
-     -- Bitcoin Alphabet
+    -- Bitcoin base58 alphabet
     base58_alphabet TEXT := '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
     byte_value      INT;
     byte_val        INT;
