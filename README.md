@@ -3,10 +3,10 @@
 1. Like ULID, but with fewer random bits, and output as Base58, with an optional prefix. Or;
 1. Like Stripe prefixed IDs, but the IDs are lexicographically sortable.
 
+### Installation
+Run [`gen_id.sql`](./gen_id.sql) or paste the SQL on the psql command line.
 
-E.g.
-
-##### Default
+### Usage
 ```sql
 select gen_id();
     gen_id
@@ -15,7 +15,7 @@ select gen_id();
 (1 row)
 ```
 
-##### With prefix
+#### Usage with prefix
 ``` sql
 select gen_id('user');
     gen_id
@@ -24,7 +24,7 @@ select gen_id('user');
 (1 row)
 ```
 
-## ID Format
+### ID Format
 ```
     acc_5xZiDpFgozVMj     Base58 (output format of the ID)
         5xZiDpFgozVMj     Base58 (if no prefix is used)
@@ -46,5 +46,8 @@ select gen_id('user');
 - 32 bits
 - => 4.3 Billion IDs per millisecond
 
-## Testing
+### Testing
 pg-id is tested using [pgTAP](https://pgtap.org), see [`gen_id_test.sql`](./gen_id_test.sql).
+
+### postgres-ulid
+See also https://github.com/chrhansen/postgres-ulid that follows the ULID spec, but allows for output in hex, base32 (ULID default), and base58.
