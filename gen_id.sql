@@ -13,18 +13,15 @@ DECLARE
     ulid          BYTEA;
     return_string TEXT;
 BEGIN
-    -- 6 timestamp bytes
+    -- 6 timestamp bytes => millisecond precision
     unix_time := (EXTRACT(EPOCH FROM NOW()) * 1000)::BIGINT;
-    timestamp := SET_BYTE(timestamp, 0, (unix_time >> 40)::BIT(8)::INTEGER);
-    timestamp := SET_BYTE(timestamp, 1, (unix_time >> 32)::BIT(8)::INTEGER);
-    timestamp := SET_BYTE(timestamp, 2, (unix_time >> 24)::BIT(8)::INTEGER);
-    timestamp := SET_BYTE(timestamp, 3, (unix_time >> 16)::BIT(8)::INTEGER);
-    timestamp := SET_BYTE(timestamp, 4, (unix_time >> 8)::BIT(8)::INTEGER);
-    timestamp := SET_BYTE(timestamp, 5, unix_time::BIT(8)::INTEGER);
-    -- 4 entropy bytes (a ULID would use 10 bytes)
+    FOR i IN 0..5 LOOP
+        timestamp := SET_BYTE(timestamp, i, (unix_time >> (40 - i * 8))::BIT(8)::INTEGER);
+    END LOOP;
+
+    -- 4 entropy bytes => I.e. ~4.3 Billion IDs per millisecond
     ulid := timestamp || gen_random_bytes(4);
 
-    -- Remove the leading '\x' and just keep the rest of the hex-characters
     return_string := RIGHT(ulid::text, - 2);
 
     return_string := hex_to_base58(return_string);
@@ -50,11 +47,8 @@ DECLARE
     byte_val INT;
     byte_values INT[] DEFAULT ARRAY[]::INT[];
     modulo INT;
-
-    -- The final encoded string
     base_enc_string TEXT := '';
 BEGIN
-    -- Convert 'hexstr', to the base10 ('normal' digits) 'num'
     FOR hex_index IN REVERSE ((length(hexstr) / 2) - 1)..0 LOOP
         byte_value := get_byte(bytes, hex_index);
         IF byte_value = 0 THEN
@@ -66,21 +60,17 @@ BEGIN
         base := base * 256;
     END LOOP;
 
-    -- Convert the base10-'num', to the characters in Base58
     WHILE num > 0 LOOP
         modulo := num % length(base58_alphabet);
         num := div(num, length(base58_alphabet));
         byte_values := array_append(byte_values, modulo);
     END LOOP;
 
-    -- Convert the byte_values using characters from Base58. By prepending to
-    -- 'base_enc_string' the order of 'byte_values' is reversed.
     FOREACH byte_val IN ARRAY byte_values
     LOOP
         base_enc_string := SUBSTRING(base58_alphabet, byte_val + 1, 1) || base_enc_string;
     END LOOP;
 
-    -- Prepend first Base58-character to account for leading zeroes in 'hexstr'
     base_enc_string := repeat(SUBSTRING(base58_alphabet, 1, 1), leading_zeroes) || base_enc_string;
 
     RETURN base_enc_string;
