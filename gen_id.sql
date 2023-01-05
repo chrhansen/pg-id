@@ -1,8 +1,12 @@
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
--- 6 timestamp bytes (ms precision) + 4 random bytes => output as
+-- The generated ID has 6 timestamp bytes (ms precision) + 4 random bytes =>
+-- output is Base58 encoded, with an optional prefix:
 -- gen_id() => 5xXBF6THVcCpa
 -- gen_id('user') => user_5xXBF6THVcCpa
--- Read more: https://github.com/chrhansen/pg-id
+
+-- Like Stripe IDs (designed for humans to read), but not all bytes are random
+-- to improve indexing. Inspired by https://github.com/ulid/spec
+-- https://github.com/chrhansen/pg-id
 
 CREATE OR REPLACE FUNCTION gen_id(prefix text default NULL) RETURNS text
     LANGUAGE plpgsql
