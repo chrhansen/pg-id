@@ -4,18 +4,19 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- gen_id() => 5xXBF6THVcCpa
 -- gen_id('user') => user_5xXBF6THVcCpa
 
--- Like Stripe IDs (designed for humans to read), but not all bytes are random
--- to improve indexing. Inspired by https://github.com/ulid/spec
+-- Like Stripe IDs (designed for humans to read), but the first bytes after the
+-- prefix a timestamp to the IDs sortable. Inspired by https://github.com/ulid/spec
 -- https://github.com/chrhansen/pg-id
 
 CREATE OR REPLACE FUNCTION gen_id(prefix text default NULL) RETURNS text
     LANGUAGE plpgsql
     AS $$
 DECLARE
-    timestamp     BYTEA := E'\\000\\000\\000\\000\\000\\000';
-    unix_time     BIGINT;
-    ulid          BYTEA;
-    return_string TEXT;
+    timestamp        BYTEA := E'\\000\\000\\000\\000\\000\\000';
+    unix_time        BIGINT;
+    ulid             BYTEA;
+    return_string    TEXT;
+    no_of_rand_bytes INT := 4;
 BEGIN
     -- 6 timestamp bytes => millisecond precision
     unix_time := (EXTRACT(EPOCH FROM NOW()) * 1000)::BIGINT;
@@ -24,7 +25,7 @@ BEGIN
     END LOOP;
 
     -- 4 entropy bytes => I.e. ~4.3 Billion IDs per millisecond
-    ulid := timestamp || gen_random_bytes(4);
+    ulid := timestamp || gen_random_bytes(no_of_rand_bytes);
 
     return_string := RIGHT(ulid::text, - 2);
 
@@ -40,18 +41,18 @@ $$;
 
 CREATE OR REPLACE FUNCTION hex_to_base58(hexstr TEXT) RETURNS TEXT AS $$
 DECLARE
-    bytes BYTEA := ('\x' || hexstr)::BYTEA;
+    bytes          BYTEA := ('\x' || hexstr)::BYTEA;
     leading_zeroes INT := 0;
-    num DECIMAL(40,0) := 0;
-    base DECIMAL(40,0) := 1;
+    num            DECIMAL(40,0) := 0;
+    base           DECIMAL(40,0) := 1;
 
-     -- Bitcoin
+     -- Bitcoin Alphabet
     base58_alphabet TEXT := '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
-    byte_value INT;
-    byte_val INT;
-    byte_values INT[] DEFAULT ARRAY[]::INT[];
-    modulo INT;
-    base_enc_string TEXT := '';
+    byte_value      INT;
+    byte_val        INT;
+    byte_values     INT[] DEFAULT ARRAY[]::INT[];
+    modulo          INT;
+    base58_result   TEXT := '';
 BEGIN
     FOR hex_index IN REVERSE ((length(hexstr) / 2) - 1)..0 LOOP
         byte_value := get_byte(bytes, hex_index);
@@ -61,7 +62,7 @@ BEGIN
             leading_zeroes := 0;
             num := num + (base * byte_value);
         END IF;
-        base := base * 256;
+        base := base * 256; -- = 16^2 (2 hex-digits)
     END LOOP;
 
     WHILE num > 0 LOOP
@@ -72,11 +73,11 @@ BEGIN
 
     FOREACH byte_val IN ARRAY byte_values
     LOOP
-        base_enc_string := SUBSTRING(base58_alphabet, byte_val + 1, 1) || base_enc_string;
+        base58_result := SUBSTRING(base58_alphabet, byte_val + 1, 1) || base58_result;
     END LOOP;
 
-    base_enc_string := repeat(SUBSTRING(base58_alphabet, 1, 1), leading_zeroes) || base_enc_string;
+    base58_result := repeat(SUBSTRING(base58_alphabet, 1, 1), leading_zeroes) || base58_result;
 
-    RETURN base_enc_string;
+    RETURN base58_result;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE STRICT;

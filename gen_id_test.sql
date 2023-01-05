@@ -48,7 +48,7 @@ BEGIN;
 -- #################################################
 
 -- Plan count should be the number of tests
-SELECT plan(6);
+SELECT plan(5);
 
 -- #################################################
 -- 1. Function definition checks
