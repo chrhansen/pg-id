@@ -1,14 +1,16 @@
 # pg-id
 
-1. Like ULID, but with fewer random bits, and output as Base58, with an optional prefix. Or;
-1. Like Stripe prefixed IDs, but the IDs are lexicographically sortable.
+Postgres function to generate sortable, prefixed, base58 IDs. E.g. `user_5xZiDpFgozVMj`.
+
+1. It's like [Stripe prefixed IDs](https://dev.to/stripe/designing-apis-for-humans-object-ids-3o5a#make-it-human-readable), but the IDs are sortable. Or...
+2. Like [ULID](https://github.com/ulid/spec), but with fewer random bits, output as Base58, and with an optional prefix.
 
 ### Installation
 Run [`gen_id.sql`](./gen_id.sql) or paste the SQL on the psql command line.
 
 ### Usage
-```sql
-select gen_id();
+``` sql
+SELECT gen_id();
     gen_id
 ---------------
  5xZiDpFgozVMj
@@ -17,7 +19,7 @@ select gen_id();
 
 #### Usage with prefix
 ``` sql
-select gen_id('user');
+SELECT gen_id('user');
     gen_id
 ---------------
  user_5xZiDpFgozVMj
