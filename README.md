@@ -29,15 +29,17 @@ How the base 58 ID looks like and how you can extract the timestamp (Base58 => H
 ```
     acc_5xZiDpFgozVMj       Base58 (output format of the ID)
         5xZiDpFgozVMj       Base58 (if no prefix is used)
-
+              /\
+             /  \
  0185837f00de   19e63eca    Hex (same ID – after any prefix - as Base58 above, but decoded to Hex)
 |------------| |--------|
    Timestamp   Randomness
      48bits      32bits
-     
-     
+       |
+       |
  1672948416734              Integer (milliseconds since epoch from hex-timestamp above)
-
+       |
+       |
  Jan. 5, 2023 19:53:36.734  Timestamp (UTC from milliseconds above)
 ```
 
